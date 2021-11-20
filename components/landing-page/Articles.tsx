@@ -137,7 +137,9 @@ const Articles = () => {
             flexGrow: 1
           }}
         />
-        <ButtonLink endIcon={<ArrowForwardIosRoundedIcon />} href="/u">Lebih banyak</ButtonLink>
+        <ButtonLink endIcon={<ArrowForwardIosRoundedIcon />} href="/u">
+          Lebih banyak
+        </ButtonLink>
         <Divider
           sx={{
             flexGrow: 1

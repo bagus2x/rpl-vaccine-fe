@@ -1,87 +1,146 @@
 import Link from '@/components/ui/Link'
-import IconButton from '@mui/material/IconButton'
+import useSignUp from '@/hooks/query/sign-up'
+import ContactSupportRoundedIcon from '@mui/icons-material/ContactSupportRounded'
+import HomeRoundedIcon from '@mui/icons-material/HomeRounded'
+import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded'
+import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded'
+import DatePicker from '@mui/lab/DatePicker'
 import Button from '@mui/material/Button'
 import Container from '@mui/material/Container'
+import IconButton from '@mui/material/IconButton'
+import InputAdornment from '@mui/material/InputAdornment'
 import Slide from '@mui/material/Slide'
 import Stack from '@mui/material/Stack'
 import { useTheme } from '@mui/material/styles'
 import TextField from '@mui/material/TextField'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import type { NextPage } from 'next'
-import HomeRoundedIcon from '@mui/icons-material/HomeRounded'
-import Tooltip from '@mui/material/Tooltip'
-import ContactSupportRoundedIcon from '@mui/icons-material/ContactSupportRounded'
+import Head from 'next/head'
 import NextLink from 'next/link'
-import InputAdornment from '@mui/material/InputAdornment'
-import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded'
-import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/router'
+import { useState, useEffect } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import DateAdapter from '@mui/lab/AdapterMoment'
+import LocalizationProvider from '@mui/lab/LocalizationProvider'
+import { isWebResponse } from '@/utils/web-response'
+import { useSnackbar } from 'notistack'
+import useUser from '@/hooks/query/user'
 
-interface SignInForm {
+interface SignUpForm {
   name: string
-  password: string
   email: string
-  handphoneNumber: string
-  confirmationPassword: string
+  password: string
+  password2: string
+  dateOfBirth: Date | null
+}
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const Navigation = () => {
+  const theme = useTheme()
+
+  return (
+    <Stack direction="row" spacing={2}>
+      <Tooltip arrow title="Home">
+        <span>
+          <NextLink href="/" passHref>
+            <IconButton
+              sx={{
+                color: theme.palette.text.secondary
+              }}
+            >
+              <HomeRoundedIcon />
+            </IconButton>
+          </NextLink>
+        </span>
+      </Tooltip>
+      <Tooltip arrow title="Kontak">
+        <span>
+          <NextLink href="/contact" passHref>
+            <IconButton
+              sx={{
+                color: theme.palette.text.secondary
+              }}
+            >
+              <ContactSupportRoundedIcon />
+            </IconButton>
+          </NextLink>
+        </span>
+      </Tooltip>
+    </Stack>
+  )
 }
 
 const UserLogin: NextPage = () => {
   const theme = useTheme()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfPassword, setShowConfPassword] = useState(false)
-  const { handleSubmit } = useForm<SignInForm>()
+  const {
+    handleSubmit,
+    register,
+    watch,
+    control,
+    formState: { errors }
+  } = useForm<SignUpForm>()
   const router = useRouter()
+  const signUp = useSignUp()
+  const { enqueueSnackbar } = useSnackbar()
+  const user = useUser()
+
+  useEffect(() => {
+    if (user.isSuccess) {
+      router.push('/u')
+    }
+  }, [user])
 
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword)
   }
 
   const handleClickShowConfPassword = () => {
-    setShowConfPassword(!showPassword)
+    setShowConfPassword(!showConfPassword)
   }
 
-  const handleSignIn = handleSubmit((data) => {
-    router.push('/u')
+  const errorSnackbar = (msg: string) => {
+    enqueueSnackbar(msg, { variant: 'error', preventDuplicate: true, autoHideDuration: 3000 })
+  }
+
+  const handleSignUp = handleSubmit((data) => {
+    signUp.mutate(
+      {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        dateOfBirth: new Date(data.dateOfBirth as Date).getTime()
+      },
+      {
+        onError: (e: any) => {
+          if (isWebResponse(e)) {
+            errorSnackbar(e.response?.data.data ?? 'Terjadi kesalahan')
+            return
+          }
+          errorSnackbar('Terjadi kesalahan')
+        },
+        onSuccess: () => {
+          router.push('/u')
+        }
+      }
+    )
   })
 
   return (
     <>
+      <Head>
+        <title>Daftar ke Vaccine Maps</title>
+      </Head>
       <Container
         maxWidth="xl"
         sx={{
           mt: 2
         }}
       >
-        <Stack direction="row" spacing={2}>
-          <Tooltip arrow title="Home">
-            <span>
-              <NextLink href="/" passHref>
-                <IconButton
-                  sx={{
-                    color: theme.palette.text.secondary
-                  }}
-                >
-                  <HomeRoundedIcon />
-                </IconButton>
-              </NextLink>
-            </span>
-          </Tooltip>
-          <Tooltip arrow title="Kontak">
-            <span>
-              <NextLink href="/contact" passHref>
-                <IconButton
-                  sx={{
-                    color: theme.palette.text.secondary
-                  }}
-                >
-                  <ContactSupportRoundedIcon />
-                </IconButton>
-              </NextLink>
-            </span>
-          </Tooltip>
-        </Stack>
+        <Navigation />
       </Container>
       <Slide in direction="down" timeout={1000}>
         <Container
@@ -92,9 +151,9 @@ const UserLogin: NextPage = () => {
           }}
         >
           <Stack
-            spacing={2}
+            spacing={1.5}
             component="form"
-            onSubmit={handleSignIn}
+            onSubmit={handleSignUp}
             sx={{
               width: '100%',
               borderRadius: 4,
@@ -116,38 +175,72 @@ const UserLogin: NextPage = () => {
               size="small"
               label="Nama"
               fullWidth
-              helperText="Ini adalah warning"
               InputLabelProps={{ shrink: true }}
+              helperText={errors.name ? errors.name.message : ' '}
+              error={!!errors.name}
+              {...register('name', {
+                required: 'Nama pengguna wajib diisi'
+              })}
             />
             <TextField
               variant="outlined"
               size="small"
               label="Email"
               fullWidth
-              helperText="Ini adalah warning"
               InputLabelProps={{ shrink: true }}
+              helperText={errors.email ? errors.email.message : ' '}
+              error={!!errors.email}
+              {...register('email', {
+                required: 'Email wajib diisi',
+                pattern: { value: emailPattern, message: 'Email tidak valid' }
+              })}
             />
-            <TextField
-              variant="outlined"
-              size="small"
-              label="No. Handphone"
-              fullWidth
-              helperText="Ini adalah warning"
-              InputLabelProps={{ shrink: true }}
-            />
+            <LocalizationProvider dateAdapter={DateAdapter}>
+              <Controller
+                name="dateOfBirth"
+                defaultValue={null}
+                control={control}
+                rules={{
+                  required: 'Tanggal lahir wajib diisi'
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <DatePicker
+                    disableFuture
+                    label="Responsive"
+                    onChange={onChange}
+                    openTo="year"
+                    value={value}
+                    views={['year', 'day']}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        variant="outlined"
+                        size="small"
+                        label="Tanggal lahir"
+                        fullWidth
+                        InputLabelProps={{ shrink: true }}
+                        helperText={errors.dateOfBirth ? errors.dateOfBirth.message : ' '}
+                        error={!!errors.dateOfBirth}
+                      />
+                    )}
+                  />
+                )}
+              />
+            </LocalizationProvider>
             <TextField
               variant="outlined"
               size="small"
               label="Password"
               fullWidth
               type={showPassword ? 'text' : 'password'}
-              helperText="Ini adalah warning"
               InputLabelProps={{ shrink: true }}
+              helperText={errors.password ? errors.password.message : ' '}
+              error={!!errors.password}
               InputProps={{
                 endAdornment: (
-                  <InputAdornment position="end">
+                  <InputAdornment position="end" sx={{ m: 0 }}>
                     <IconButton
-                      size="small"
+                      edge="end"
                       onClick={handleClickShowPassword}
                       sx={{
                         color: theme.palette.text.secondary
@@ -158,6 +251,10 @@ const UserLogin: NextPage = () => {
                   </InputAdornment>
                 )
               }}
+              {...register('password', {
+                required: 'Password wajib diisi',
+                minLength: { value: 5, message: 'Panjang minimum 5 karakter' }
+              })}
             />
             <TextField
               variant="outlined"
@@ -165,13 +262,14 @@ const UserLogin: NextPage = () => {
               label="Konfirmasi password"
               fullWidth
               type={showConfPassword ? 'text' : 'password'}
-              helperText="Ini adalah warning"
               InputLabelProps={{ shrink: true }}
+              helperText={errors.password2 ? errors.password2.message : ' '}
+              error={!!errors.password2}
               InputProps={{
                 endAdornment: (
-                  <InputAdornment position="end">
+                  <InputAdornment position="end" sx={{ m: 0 }}>
                     <IconButton
-                      size="small"
+                      edge="end"
                       onClick={handleClickShowConfPassword}
                       sx={{
                         color: theme.palette.text.secondary
@@ -182,8 +280,18 @@ const UserLogin: NextPage = () => {
                   </InputAdornment>
                 )
               }}
+              {...register('password2', {
+                required: 'Password wajib diisi',
+                validate: (value) => watch('password') === value || 'Password tidak cocok'
+              })}
             />
-            <Button variant="contained" size="small" sx={{ alignSelf: 'flex-end' }} type="submit">
+            <Button
+              disabled={user.isLoading}
+              variant="contained"
+              size="small"
+              sx={{ alignSelf: 'flex-end' }}
+              type="submit"
+            >
               DAFTAR
             </Button>
             <Stack

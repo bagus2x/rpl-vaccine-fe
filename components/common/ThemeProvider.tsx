@@ -1,10 +1,11 @@
+import type {} from '@mui/lab/themeAugmentation'
 import { cyan, lightGreen, red } from '@mui/material/colors'
-import { createTheme, Theme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles'
-import React, { Dispatch, FC, useContext, useMemo, useReducer } from 'react'
+import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles'
+import Head from 'next/head'
+import React, { Dispatch, FC, useContext, useMemo, useReducer, useCallback } from 'react'
 
 interface ThemeProviderProps {
   children: React.ReactNode
-  theme: Theme
 }
 
 type ThemeMode = 'dark' | 'light'
@@ -31,9 +32,10 @@ function reducer(mode: ThemeMode = initialMode, action: Action) {
   }
 }
 
-const ThemeProvider: FC<ThemeProviderProps> = ({ children, theme }) => {
+const ThemeProvider: FC<ThemeProviderProps> = ({ children }) => {
   const [mode, dispatch] = useReducer(reducer, initialMode)
   const value = useMemo(() => ({ mode, dispatch }), [mode, dispatch])
+
   const memoizedTheme = useMemo(() => {
     return createTheme({
       palette: {
@@ -55,19 +57,24 @@ const ThemeProvider: FC<ThemeProviderProps> = ({ children, theme }) => {
         }
       }
     })
-  }, [theme, value.mode])
+  }, [value.mode])
 
   return (
-    <MuiThemeProvider theme={memoizedTheme}>
-      <ThemeDispatchContext.Provider value={value}>{children}</ThemeDispatchContext.Provider>
-    </MuiThemeProvider>
+    <>
+      <Head>
+        <meta name="theme-color" content={memoizedTheme.palette.primary.main} />
+      </Head>
+      <MuiThemeProvider theme={memoizedTheme}>
+        <ThemeDispatchContext.Provider value={value}>{children}</ThemeDispatchContext.Provider>
+      </MuiThemeProvider>
+    </>
   )
 }
 
 export const useChangeThemeMode = () => {
   const { dispatch, mode } = useContext(ThemeDispatchContext)
 
-  const changeThemeMode = React.useCallback(
+  const changeThemeMode = useCallback(
     (mode: ThemeMode) =>
       dispatch({
         type: 'change_mode',

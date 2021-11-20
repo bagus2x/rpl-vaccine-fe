@@ -1,3 +1,6 @@
+import useHasRole from '@/hooks/query/has-role'
+import useUser from '@/hooks/query/user'
+import { truncate } from '@/utils/truncate'
 import RegisterRoundedIcon from '@mui/icons-material/AppRegistrationRounded'
 import ExitToAppRoundedIcon from '@mui/icons-material/ExitToAppRounded'
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded'
@@ -29,53 +32,67 @@ const drawerWidth = 240
 
 const MenuItems = () => {
   const theme = useTheme()
+  const user = useUser()
+  const hasRole = useHasRole(user.data?.roles)
 
   return (
-    <Stack
-      sx={{
-        '& *': {
-          color: theme.palette.text.primary
-        }
-      }}
-    >
-      <Toolbar />
-      <Divider />
-      <List>
-        <Link href="/u">
+    <>
+      <Stack
+        sx={{
+          '& *': {
+            color: theme.palette.text.primary
+          }
+        }}
+      >
+        <Toolbar />
+        <Divider />
+        <List>
+          <Link href="/u">
+            <ListItem button>
+              <ListItemIcon>
+                <HomeRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="Beranda" />
+            </ListItem>
+          </Link>
+          <Link href="/u/registration">
+            <ListItem button>
+              <ListItemIcon>
+                <RegisterRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="Pendaftaran" />
+            </ListItem>
+          </Link>
+          <Link href="/u/history">
+            <ListItem button>
+              <ListItemIcon>
+                <ScheduleRoundedIcon />
+              </ListItemIcon>
+              <ListItemText primary="Riwayat" />
+            </ListItem>
+          </Link>
+        </List>
+        <Divider />
+        <List>
           <ListItem button>
             <ListItemIcon>
-              <HomeRoundedIcon />
+              <HelpOutlineRoundedIcon />
             </ListItemIcon>
-            <ListItemText primary="Beranda" />
+            <ListItemText primary="Bantuan" />
           </ListItem>
+        </List>
+      </Stack>
+      <Box flexGrow={1} />
+      {hasRole('ROLE_ADMIN') && (
+        <Link href="/a">
+          <List>
+            <ListItem button>
+              <ListItemText primaryTypographyProps={{ variant: 'body2' }} primary="Beralih sebagai admin" />
+            </ListItem>
+          </List>
         </Link>
-        <Link href="/u/vaccination-schedule">
-          <ListItem button>
-            <ListItemIcon>
-              <RegisterRoundedIcon />
-            </ListItemIcon>
-            <ListItemText primary="Daftar" />
-          </ListItem>
-        </Link>
-        <Link href="/u/vaccination-registration">
-          <ListItem button>
-            <ListItemIcon>
-              <ScheduleRoundedIcon />
-            </ListItemIcon>
-            <ListItemText primary="Jadwal" />
-          </ListItem>
-        </Link>
-      </List>
-      <Divider />
-      <List>
-        <ListItem button>
-          <ListItemIcon>
-            <HelpOutlineRoundedIcon />
-          </ListItemIcon>
-          <ListItemText primary="Bantuan" />
-        </ListItem>
-      </List>
-    </Stack>
+      )}
+    </>
   )
 }
 
@@ -95,7 +112,13 @@ const DrawerOnXsScreen = ({ open, onClose }: DrawerOnXsScreenProps) => {
       }}
       sx={{
         display: { xs: 'block', md: 'none' },
-        '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth }
+        '& .MuiDrawer-paper': {
+          boxSizing: 'border-box',
+          width: drawerWidth,
+          display: 'flex',
+          height: '100vh',
+          flexDirection: 'column'
+        }
       }}
     >
       <MenuItems />
@@ -121,6 +144,7 @@ const DrawerOnMdScreen = () => {
 const ProfileMenu = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const theme = useTheme()
+  const user = useUser()
 
   const handleOpenMenu = (ev: MouseEvent<HTMLElement>) => {
     setAnchorEl(ev.currentTarget)
@@ -132,8 +156,13 @@ const ProfileMenu = () => {
 
   return (
     <Box>
-      <Button color="inherit" onClick={handleOpenMenu} startIcon={<PersonOutlineRoundedIcon />}>
-        Bagus
+      <Button
+        color="inherit"
+        onClick={handleOpenMenu}
+        startIcon={<PersonOutlineRoundedIcon />}
+        disabled={!user.isSuccess}
+      >
+        {user.isSuccess ? truncate(user.data.name, 10) : 'Halo, pengguna'}
       </Button>
       <Menu
         open={!!anchorEl}
@@ -153,17 +182,19 @@ const ProfileMenu = () => {
           <MenuItem onClick={handleCloseMenu}>Pengaturan</MenuItem>
         </Link>
         <Divider />
-        <MenuItem onClick={handleCloseMenu}>
-          <ListItemIcon>
-            <ExitToAppRoundedIcon
-              fontSize="small"
-              sx={{
-                color: theme.palette.text.primary
-              }}
-            />
-          </ListItemIcon>
-          Sign out
-        </MenuItem>
+        <Link passHref href="/signout">
+          <MenuItem onClick={handleCloseMenu}>
+            <ListItemIcon>
+              <ExitToAppRoundedIcon
+                fontSize="small"
+                sx={{
+                  color: theme.palette.text.primary
+                }}
+              />
+            </ListItemIcon>
+            Sign out
+          </MenuItem>
+        </Link>
       </Menu>
     </Box>
   )
@@ -269,7 +300,6 @@ const UserLayout: FC = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 2,
           width: { md: `calc(100% - ${drawerWidth}px)` }
         }}
       >

@@ -1,9 +1,7 @@
 import createEmotionCache from '@/utils/create-emotion-cache'
-import theme from '@/utils/theme'
 import yarn from '@emotion/server/create-instance'
 import Document, { Head, Html, Main, NextScript } from 'next/document'
 import React from 'react'
-
 
 export default class MyDocument extends Document {
   
