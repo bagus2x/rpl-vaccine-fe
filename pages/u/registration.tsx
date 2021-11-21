@@ -55,7 +55,7 @@ const VaccinationCard = ({ id, title, vaccine, description, picture, startDate, 
           errorSnackbar('Terjadi kesalahan')
         },
         onSuccess: () => {
-          enqueueSnackbar('Berhasil mendaftar')
+          enqueueSnackbar('Berhasil mendaftar', {autoHideDuration: 3000})
         }
       }
     )

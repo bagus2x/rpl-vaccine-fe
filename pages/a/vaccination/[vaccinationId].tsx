@@ -1,11 +1,16 @@
 import AdminLayout from '@/components/common/AdminLayout'
-import useParticipantsyVaccinationId from '@/hooks/query/participants-by-vaccination-id'
+import useAcceptParticipant from '@/hooks/query/accept-participant'
+import useParticipantsyVaccinationId, { ParticipantsResponse } from '@/hooks/query/participants-by-vaccination-id'
+import useRejectParticipant from '@/hooks/query/reject-participant'
 import useVaccionationById from '@/hooks/query/vaccination-by-id'
+import humanDate from '@/utils/human-date'
 import { NextPageWithLayout } from '@/utils/types'
+import { isWebResponse } from '@/utils/web-response'
+import Box from '@mui/material/Box'
 import Container from '@mui/material/Container'
+import MenuItem from '@mui/material/MenuItem'
+import Select, { SelectChangeEvent } from '@mui/material/Select'
 import Stack from '@mui/material/Stack'
-import { useRouter } from 'next/router'
-import React, { ReactElement } from 'react'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
@@ -13,19 +18,78 @@ import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
-import Box from '@mui/material/Box'
-import humanDate from '@/utils/human-date'
-import Divider from '@mui/material/Divider'
-import Paper from '@mui/material/Paper'
-import Select, { SelectChangeEvent } from '@mui/material/Select'
-import MenuItem from '@mui/material/MenuItem'
+import { useRouter } from 'next/router'
+import { useSnackbar } from 'notistack'
+import React, { ReactElement } from 'react'
+import { useQueryClient } from 'react-query'
 
 const VaccinationDetail: NextPageWithLayout = () => {
   const router = useRouter()
   const participants = useParticipantsyVaccinationId(parseInt(router.query.vaccinationId as string))
   const vaccination = useVaccionationById(parseInt(router.query.vaccinationId as string))
+  const acceptParticipant = useAcceptParticipant()
+  const rejectParticipant = useRejectParticipant()
+  const { enqueueSnackbar } = useSnackbar()
+  const queryClient = useQueryClient()
 
-  const handleStatusChange = (participantId: number) => (ev: SelectChangeEvent) => {}
+  const errorSnackbar = (msg: string) => {
+    enqueueSnackbar(msg, { variant: 'error', preventDuplicate: true, autoHideDuration: 3000 })
+  }
+
+  const handleStatusChange = (participantId: number) => (ev: SelectChangeEvent) => {
+    const status = ev.target.value
+    if (status === 'ACCEPTED') {
+      acceptParticipant.mutate(participantId, {
+        onError: (e: any) => {
+          if (isWebResponse(e)) {
+            errorSnackbar(e.response?.data.data ?? 'Terjadi kesalahan')
+            return
+          }
+          errorSnackbar('Terjadi kesalahan')
+        },
+        onSuccess: (_data, req) => {
+          queryClient.setQueryData(
+            ['PARTICIPANTS_BY_VACCINATION_ID', parseInt(router.query.vaccinationId as string)],
+            (old) =>
+              (old as ParticipantsResponse).map((participant) =>
+                participant.id === req
+                  ? {
+                      ...participant,
+                      status: 'ACCEPTED'
+                    }
+                  : participant
+              )
+          )
+        }
+      })
+      return
+    }
+    if (status === 'REJECTED') {
+      rejectParticipant.mutate(participantId, {
+        onError: (e: any) => {
+          if (isWebResponse(e)) {
+            errorSnackbar(e.response?.data.data ?? 'Terjadi kesalahan')
+            return
+          }
+          errorSnackbar('Terjadi kesalahan')
+        },
+        onSuccess: (_data, req) => {
+          queryClient.setQueryData(
+            ['PARTICIPANTS_BY_VACCINATION_ID', parseInt(router.query.vaccinationId as string)],
+            (old) =>
+              (old as ParticipantsResponse).map((participant) =>
+                participant.id === req
+                  ? {
+                      ...participant,
+                      status: 'REJECTED'
+                    }
+                  : participant
+              )
+          )
+        }
+      })
+    }
+  }
 
   return (
     <Container component={Stack} disableGutters sx={{ p: { xs: 1, md: 3 } }} spacing={4}>
@@ -66,12 +130,19 @@ const VaccinationDetail: NextPageWithLayout = () => {
                       id="select-status"
                       fullWidth
                       defaultValue={participant.status}
+                      value={participant.status}
                       size="small"
                       onChange={handleStatusChange(participant.id)}
                     >
-                      <MenuItem disabled={participant.status === 'CANCELED'} value="ACCEPTED">ACCEPTED</MenuItem>
-                      <MenuItem disabled={participant.status === 'CANCELED'} value="REJECTED">REJECTED</MenuItem>
-                      <MenuItem disabled value="CANCELED">CANCELED</MenuItem>
+                      <MenuItem disabled={participant.status === 'CANCELED'} value="ACCEPTED">
+                        ACCEPTED
+                      </MenuItem>
+                      <MenuItem disabled={participant.status === 'CANCELED'} value="REJECTED">
+                        REJECTED
+                      </MenuItem>
+                      <MenuItem disabled value="CANCELED">
+                        CANCELED
+                      </MenuItem>
                       <MenuItem disabled value="WAITING">
                         WAITING
                       </MenuItem>

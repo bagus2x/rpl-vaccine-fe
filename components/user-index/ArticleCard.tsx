@@ -1,11 +1,21 @@
 import { loremBody, loremTitle } from '@/utils/lorem'
 import { truncate } from '@/utils/truncate'
-import { Box, Divider, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import { alpha, Box, Divider, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import React from 'react'
 import ButtonLink from '@/components/ui/ButtonLink'
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded'
+import Image from 'next/image'
+import moment from 'moment'
 
-const ArticleCard = () => {
+interface ArticleCardProps {
+  id: number
+  picture?: string
+  title: string
+  content: string
+  createdAt: number
+}
+
+const ArticleCard = ({ id, picture, title, content, createdAt }: ArticleCardProps) => {
   const theme = useTheme()
   const xsUp = useMediaQuery(theme.breakpoints.up('xs'))
   const smUp = useMediaQuery(theme.breakpoints.up('sm'))
@@ -13,11 +23,16 @@ const ArticleCard = () => {
   const lgUp = useMediaQuery(theme.breakpoints.up('lg'))
 
   const getTruuncatedString = (str: string) => {
-    if (lgUp) return truncate(str, 400)
-    if (mdUp) return truncate(str, 320)
-    if (smUp) return truncate(str, 240)
-    if (xsUp) return truncate(str, 100)
-    return str
+    const body = str.replace(/<[^>]+>/g, '')
+    if (lgUp) return truncate(body, 400)
+    if (mdUp) return truncate(body, 320)
+    if (smUp) return truncate(body, 240)
+    if (xsUp) return truncate(body, 100)
+    return body
+  }
+
+  const humanDate = (epoch: number) => {
+    return moment(epoch).fromNow()
   }
 
   return (
@@ -65,9 +80,39 @@ const ArticleCard = () => {
             bgcolor: 'gray',
             gridArea: 'image',
             borderRadius: 3,
-            mr: { xs: 1, md: 2 }
+            mr: { xs: 1, md: 2 },
+            position: 'relative',
+            overflow: 'hidden'
           }}
-        ></Box>
+        >
+          <Image
+            draggable={false}
+            src={picture || '/assets/image/Depositphotos_336730000_l-2015.jpg'}
+            layout="fill"
+            objectFit="cover"
+          />
+          {!smUp && (
+            <Stack
+              direction="row"
+              spacing={0.5}
+              alignItems="center"
+              sx={{
+                position: 'absolute',
+                left: 0,
+                bottom: 0,
+                color: '#fff',
+                width: '100%',
+                p: 0.5,
+                background: {xs: `linear-gradient(to top, black, transparent)`, md: 'transparent'}
+              }}
+            >
+              <AccessTimeRoundedIcon fontSize="small" color="inherit" />
+              <Typography variant="caption" color="inherit">
+                {humanDate(createdAt)}
+              </Typography>
+            </Stack>
+          )}
+        </Box>
         <Typography
           variant="h6"
           sx={{
@@ -77,7 +122,7 @@ const ArticleCard = () => {
             gridArea: 'title'
           }}
         >
-          {loremTitle}
+          {title}
         </Typography>
         <Typography
           variant="body2"
@@ -86,7 +131,7 @@ const ArticleCard = () => {
             textAlign: 'justify'
           }}
         >
-          {getTruuncatedString(loremBody)}
+          {getTruuncatedString(content)}
         </Typography>
         <Stack
           direction="row"
@@ -96,20 +141,24 @@ const ArticleCard = () => {
             boxSizing: 'border-box'
           }}
         >
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            <AccessTimeRoundedIcon fontSize="small" />
-            <Typography variant="caption">1 h</Typography>
-          </Stack>
-          <Divider
-            orientation="vertical"
-            sx={{
-              boxSizing: 'border-box',
-              height: 18,
-              alignSelf: 'center'
-            }}
-          />
+          {smUp && (
+            <>
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <AccessTimeRoundedIcon fontSize="small" />
+                <Typography variant="caption">{humanDate(createdAt)}</Typography>
+              </Stack>
+              <Divider
+                orientation="vertical"
+                sx={{
+                  boxSizing: 'border-box',
+                  height: 18,
+                  alignSelf: 'center'
+                }}
+              />
+            </>
+          )}
           <ButtonLink
-            href="/u/articles"
+            href={`/u/article/${id}`}
             size="small"
             sx={{
               p: 0.5

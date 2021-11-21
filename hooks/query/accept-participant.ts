@@ -1,11 +1,9 @@
 import { restClient } from '@/utils/axios'
 import { getToken } from '@/utils/jwt'
 import WebResponse from '@/utils/web-response'
-import { useQuery } from 'react-query'
+import { useMutation } from 'react-query'
 
-export type Status = 'ACCEPTED' | 'REJECTED' | 'CANCELED' | 'WAITING'
-
-export interface Participant {
+interface ParticipantResponse {
   id: number
   user: {
     id: number
@@ -21,28 +19,23 @@ export interface Participant {
     startDate: number
     lastDate: number
   }
-  status: Status
+  status: string
   createdAt: number
   updatedAt: number
 }
 
-export type ParticipantsResponse = Array<Participant>
-
-const getParticipants = async () => {
+const accept = async (participantId: number) => {
   const token = getToken()
-  const res = await restClient.get<WebResponse<ParticipantsResponse>>('/participants?size=20', {
+  const res = await restClient.patch<WebResponse<ParticipantResponse>>(`/participant/${participantId}/accept`, null, {
     headers: {
       Authorization: `Bearer ${token}`
     }
   })
-
   return res.data.data
 }
 
-const useParticipants = () => {
-  return useQuery('PARTICIPANTS', getParticipants, {
-    enabled: !!getToken()
-  })
+const useAcceptParticipant = () => {
+  return useMutation('ACCEPT_PARTICIPANT', accept)
 }
 
-export default useParticipants
+export default useAcceptParticipant

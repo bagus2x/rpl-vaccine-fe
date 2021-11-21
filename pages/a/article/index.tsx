@@ -1,6 +1,8 @@
 import AdminLayout from '@/components/common/AdminLayout'
-import useArticles from '@/hooks/query/articles'
+import useArticles, { ArticlesResponse } from '@/hooks/query/articles'
+import useDeleteArticle from '@/hooks/query/delete-article'
 import { NextPageWithLayout } from '@/utils/types'
+import { isWebResponse } from '@/utils/web-response'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 import Box from '@mui/material/Box'
 import Container from '@mui/material/Container'
@@ -17,7 +19,9 @@ import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 import moment from 'moment'
 import Link from 'next/link'
+import { useSnackbar } from 'notistack'
 import React, { MouseEventHandler, ReactElement, useState } from 'react'
+import { useQueryClient } from 'react-query'
 
 const humanDate = (epoch: number) => {
   return moment(epoch).format('DD MMM YYYY HH:mm')
@@ -27,6 +31,13 @@ const Article: NextPageWithLayout = () => {
   const articles = useArticles()
   const [contextMenu, setContextMenu] = useState<{ mouseX: number; mouseY: number } | null>(null)
   const [id, setId] = useState(-1)
+  const deleteArticle = useDeleteArticle()
+  const { enqueueSnackbar } = useSnackbar()
+  const queryClient = useQueryClient()
+
+  const errorSnackbar = (msg: string) => {
+    enqueueSnackbar(msg, { variant: 'error', preventDuplicate: true, autoHideDuration: 3000 })
+  }
 
   const handleContextMenu: (articleId: number) => MouseEventHandler<HTMLTableRowElement> =
     (articleId: number) => (event) => {
@@ -46,6 +57,25 @@ const Article: NextPageWithLayout = () => {
     setContextMenu(null)
     setId(-1)
   }
+
+  const handleDelete = () => {
+    deleteArticle.mutate(id, {
+      onSuccess: async (_data, req) => {
+        queryClient.setQueryData('ARTICLES', (old) => (old as ArticlesResponse).filter((article) => article.id !== req))
+      },
+      onError: (e: any) => {
+        if (isWebResponse(e)) {
+          errorSnackbar(e.response?.data.data ?? 'Terjadi kesalahan')
+          return
+        }
+        errorSnackbar('Terjadi kesalahan')
+      },
+      onSettled: () => {
+        handleClose()
+      }
+    })
+  }
+
   return (
     <Box
       sx={{
@@ -108,10 +138,10 @@ const Article: NextPageWithLayout = () => {
         anchorPosition={contextMenu !== null ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined}
       >
         <Link passHref href={`/u/article/${id}`}>
-          <MenuItem onClick={handleClose}>Pratinjau</MenuItem>
+          <MenuItem>Pratinjau</MenuItem>
         </Link>
         <MenuItem onClick={handleClose}>Sunting</MenuItem>
-        <MenuItem onClick={handleClose}>Hapus</MenuItem>
+        <MenuItem onClick={handleDelete}>Hapus</MenuItem>
       </Menu>
     </Box>
   )

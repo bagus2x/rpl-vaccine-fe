@@ -40,7 +40,7 @@ const getParticipantsByVaccinationId = (vaccinationId: number) => async () => {
 }
 
 const useParticipantsyVaccinationId = (vaccinationId?: number) => {
-  return useQuery('PARTICIPANTS_BY_VACCINATION_ID', getParticipantsByVaccinationId(vaccinationId as number), {
+  return useQuery(['PARTICIPANTS_BY_VACCINATION_ID', vaccinationId], getParticipantsByVaccinationId(vaccinationId as number), {
     enabled: !!getToken() && !!vaccinationId
   })
 }

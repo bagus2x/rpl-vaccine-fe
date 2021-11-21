@@ -4,10 +4,10 @@ import { useQuery } from 'react-query'
 
 interface Article {
   id: number
-  picture: string | null
+  picture?: string
   author: {
     id: number
-    photo: string | null
+    photo?: string
     name: string
   }
   title: string
@@ -16,9 +16,9 @@ interface Article {
 	updatedAt: number
 }
 
-type ArticlesResponse = Array<Article>
+export type ArticlesResponse = Array<Article>
 
-const getArticles = async () => {
+export const getArticles = async () => {
   const res = await restClient.get<WebResponse<ArticlesResponse>>('/articles?size=25')
   return res.data.data
 }

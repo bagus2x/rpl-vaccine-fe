@@ -4,7 +4,11 @@ import Typography from '@mui/material/Typography'
 import { Box } from '@mui/system'
 import React from 'react'
 
-const Articles = () => {
+interface ArticlesProps {
+  articles?: Array<{ id: number; picture?: string; title: string; content: string; createdAt: number }>
+}
+
+const Articles = ({ articles }: ArticlesProps) => {
   return (
     <Box>
       <Typography
@@ -22,8 +26,15 @@ const Articles = () => {
           scrollBehavior: 'smooth'
         }}
       >
-        {Array.from(Array(10).keys()).map((_, i) => (
-          <ArticleCard key={i} />
+        {articles?.map((article) => (
+          <ArticleCard
+            key={article.id}
+            id={article.id}
+            picture={article.picture}
+            title={article.title}
+            content={article.content}
+            createdAt={article.createdAt}
+          />
         ))}
       </Stack>
     </Box>

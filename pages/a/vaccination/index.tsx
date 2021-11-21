@@ -1,7 +1,9 @@
 import VaccinationTableHeader from '@/components/a-vaccination/VaccinationTableHeader'
 import AdminLayout from '@/components/common/AdminLayout'
-import useVaccinations from '@/hooks/query/vaccinations'
+import useDeleteVaccination from '@/hooks/query/delete-vaccination'
+import useVaccinations, { VaccinationsResponse } from '@/hooks/query/vaccinations'
 import { NextPageWithLayout } from '@/utils/types'
+import { isWebResponse } from '@/utils/web-response'
 import Box from '@mui/material/Box'
 import Container from '@mui/material/Container'
 import Menu from '@mui/material/Menu'
@@ -15,7 +17,9 @@ import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import moment from 'moment'
 import Link from 'next/link'
+import { useSnackbar } from 'notistack'
 import React, { MouseEventHandler, ReactElement, useState } from 'react'
+import { useQueryClient } from 'react-query'
 
 const humanDate = (epoch: number) => {
   return moment(epoch).format('DD MMM YYYY HH:mm')
@@ -25,6 +29,13 @@ const Vaccinations: NextPageWithLayout = () => {
   const vaccinations = useVaccinations()
   const [contextMenu, setContextMenu] = useState<{ mouseX: number; mouseY: number } | null>(null)
   const [id, setId] = useState(-1)
+  const { enqueueSnackbar } = useSnackbar()
+  const queryClient = useQueryClient()
+  const deleteVaccination = useDeleteVaccination()
+
+  const errorSnackbar = (msg: string) => {
+    enqueueSnackbar(msg, { variant: 'error', preventDuplicate: true, autoHideDuration: 3000 })
+  }
 
   const handleContextMenu: (articleId: number) => MouseEventHandler<HTMLTableRowElement> =
     (articleId: number) => (event) => {
@@ -44,6 +55,27 @@ const Vaccinations: NextPageWithLayout = () => {
     setContextMenu(null)
     setId(-1)
   }
+
+  const handleDelete = () => {
+    deleteVaccination.mutate(id, {
+      onSuccess: async (_data, req) => {
+        queryClient.setQueryData('VACCINATIONS', (old) =>
+          (old as VaccinationsResponse).filter((vaccination) => vaccination.id !== req)
+        )
+      },
+      onError: (e: any) => {
+        if (isWebResponse(e)) {
+          errorSnackbar(e.response?.data.data ?? 'Terjadi kesalahan')
+          return
+        }
+        errorSnackbar('Terjadi kesalahan')
+      },
+      onSettled: () => {
+        handleClose()
+      }
+    })
+  }
+
   return (
     <Box
       sx={{
@@ -93,7 +125,7 @@ const Vaccinations: NextPageWithLayout = () => {
           <MenuItem onClick={handleClose}>Detail</MenuItem>
         </Link>
         <MenuItem onClick={handleClose}>Sunting</MenuItem>
-        <MenuItem onClick={handleClose}>Hapus</MenuItem>
+        <MenuItem onClick={handleDelete}>Hapus</MenuItem>
       </Menu>
     </Box>
   )
