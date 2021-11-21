@@ -26,12 +26,19 @@ import LocalizationProvider from '@mui/lab/LocalizationProvider'
 import { isWebResponse } from '@/utils/web-response'
 import { useSnackbar } from 'notistack'
 import useUser from '@/hooks/query/user'
+import Radio from '@mui/material/Radio'
+import RadioGroup from '@mui/material/RadioGroup'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import FormControl from '@mui/material/FormControl'
+import FormHelperText from '@mui/material/FormHelperText'
+import FormLabel from '@mui/material/FormLabel'
 
 interface SignUpForm {
   name: string
   email: string
   password: string
   password2: string
+  gender: string
   dateOfBirth: Date | null
 }
 
@@ -112,6 +119,7 @@ const UserLogin: NextPage = () => {
         name: data.name,
         email: data.email,
         password: data.password,
+        gender: data.gender,
         dateOfBirth: new Date(data.dateOfBirth as Date).getTime()
       },
       {
@@ -203,14 +211,13 @@ const UserLogin: NextPage = () => {
                 rules={{
                   required: 'Tanggal lahir wajib diisi'
                 }}
-                render={({ field: { onChange, value } }) => (
+                render={({ field }) => (
                   <DatePicker
                     disableFuture
                     label="Responsive"
-                    onChange={onChange}
                     openTo="year"
-                    value={value}
                     views={['year', 'day']}
+                    {...field}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -285,11 +292,40 @@ const UserLogin: NextPage = () => {
                 validate: (value) => watch('password') === value || 'Password tidak cocok'
               })}
             />
+            <FormControl component="fieldset" error={!!errors.gender} variant="outlined" size="small">
+              <FormLabel
+                component="legend"
+                sx={{
+                  fontSize: '0.75rem',
+                  mt: -1,
+                  ml: 2
+                }}
+              >
+                Gender
+              </FormLabel>
+              <Controller
+                control={control}
+                name="gender"
+                rules={{
+                  required: 'Jenis kelamin wajib diisi'
+                }}
+                render={({ field }) => (
+                  <RadioGroup row aria-label="gender" {...field}>
+                    <FormControlLabel value="FEMALE" control={<Radio size="small" />} label="Perempuan" />
+                    <FormControlLabel value="MALE" control={<Radio size="small" />} label="Laki-laki" />
+                  </RadioGroup>
+                )}
+              />
+              <FormHelperText>{errors.gender?.message || ' '}</FormHelperText>
+            </FormControl>
             <Button
               disabled={user.isLoading}
               variant="contained"
               size="small"
-              sx={{ alignSelf: 'flex-end' }}
+              sx={{
+                alignSelf: 'flex-end',
+                width: { xs: '100%', md: 'auto' }
+              }}
               type="submit"
             >
               DAFTAR

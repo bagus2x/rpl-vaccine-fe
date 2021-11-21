@@ -27,6 +27,10 @@ import { useTheme } from '@mui/material/styles'
 import Toolbar from '@mui/material/Toolbar'
 import Link from 'next/link'
 import React, { FC, MouseEvent, useState } from 'react'
+import ButtonBase from '@mui/material/ButtonBase'
+import Image from 'next/image'
+import { ButtonGroup } from '@mui/material'
+import ButtonLink from '../ui/ButtonLink'
 
 const drawerWidth = 240
 
@@ -156,14 +160,43 @@ const ProfileMenu = () => {
 
   return (
     <Box>
-      <Button
-        color="inherit"
+      <ButtonBase
         onClick={handleOpenMenu}
-        startIcon={<PersonOutlineRoundedIcon />}
         disabled={!user.isSuccess}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          borderRadius: 8,
+          p: 0.5,
+          color: theme.palette.text.primary,
+          fontSize: theme.typography.fontSize
+        }}
       >
-        {user.isSuccess ? truncate(user.data.name, 10) : 'Halo, pengguna'}
-      </Button>
+        <Box
+          sx={{
+            width: 32,
+            height: 32,
+            background: '#eee',
+            borderRadius: '50%',
+            mr: 1,
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          <Image
+            src={
+              user.isSuccess
+                ? user.data.photo || user.data.gender === 'MALE'
+                  ? '/assets/male.svg'
+                  : '/assets/female.svg'
+                : '/assets/male.svg'
+            }
+            layout="fill"
+            objectFit="cover"
+          />
+        </Box>
+        {user.isSuccess ? truncate(user.data.name, 5) : 'Halo, pengguna'}
+      </ButtonBase>
       <Menu
         open={!!anchorEl}
         anchorEl={anchorEl}
@@ -247,6 +280,7 @@ const NotifMenu = () => {
 const UserLayout: FC = ({ children }) => {
   const theme = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const user = useUser()
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -280,8 +314,16 @@ const UserLayout: FC = ({ children }) => {
           </IconButton>
           <Box flexGrow={1} />
           <Stack direction="row" spacing={1} alignItems="center">
-            <NotifMenu />
-            <ProfileMenu />
+            {user.isSuccess ? (
+              <>
+                <ProfileMenu />
+                <NotifMenu />
+              </>
+            ) : (
+              <ButtonLink href="/signin" variant="contained" disableElevation size="small">
+                Masuk
+              </ButtonLink>
+            )}
           </Stack>
         </Toolbar>
       </AppBar>

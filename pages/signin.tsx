@@ -202,7 +202,10 @@ const UserLogin: NextPage = () => {
               disabled={user.isLoading}
               variant="contained"
               size="small"
-              sx={{ alignSelf: 'flex-end' }}
+              sx={{
+                alignSelf: 'flex-end',
+                width: { xs: '100%', md: 'auto' }
+              }}
               type="submit"
             >
               MASUK

@@ -11,6 +11,7 @@ interface UserResponse {
   email: string
   phoneNumber: string
   kk: string
+  gender: string,
   dateOfBirth: number
 }
 
