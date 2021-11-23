@@ -1,4 +1,5 @@
 import AdminLayout from '@/components/common/AdminLayout'
+import Auth from '@/components/common/Auth'
 import useArticles, { ArticlesResponse } from '@/hooks/query/articles'
 import useDeleteArticle from '@/hooks/query/delete-article'
 import { NextPageWithLayout } from '@/utils/types'
@@ -149,6 +150,10 @@ const Article: NextPageWithLayout = () => {
 
 Article.getLayout = function getLayout(page: ReactElement) {
   return <AdminLayout>{page}</AdminLayout>
+}
+
+Article.auth = function auth(page: ReactElement) {
+  return <Auth role="ROLE_ADMIN">{page}</Auth>
 }
 
 export default Article

@@ -26,7 +26,7 @@ export interface Participant {
   updatedAt: number
 }
 
-type ParticipantsResponse = Array<Participant>
+export type ParticipantsResponse = Array<Participant>
 
 const getParticipantsByVaccinationId = (vaccinationId: number) => async () => {
   const token = getToken()

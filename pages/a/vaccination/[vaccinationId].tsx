@@ -1,4 +1,5 @@
 import AdminLayout from '@/components/common/AdminLayout'
+import NotificationSenderDialog from '@/components/vaccination-detail/NotificationSenderDialog'
 import useAcceptParticipant from '@/hooks/query/accept-participant'
 import useParticipantsyVaccinationId, { ParticipantsResponse } from '@/hooks/query/participants-by-vaccination-id'
 import useRejectParticipant from '@/hooks/query/reject-participant'
@@ -8,6 +9,7 @@ import { NextPageWithLayout } from '@/utils/types'
 import { isWebResponse } from '@/utils/web-response'
 import Box from '@mui/material/Box'
 import Container from '@mui/material/Container'
+import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import Select, { SelectChangeEvent } from '@mui/material/Select'
 import Stack from '@mui/material/Stack'
@@ -20,17 +22,20 @@ import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 import { useRouter } from 'next/router'
 import { useSnackbar } from 'notistack'
-import React, { ReactElement } from 'react'
+import React, { MouseEventHandler, ReactElement, useState } from 'react'
 import { useQueryClient } from 'react-query'
-
 const VaccinationDetail: NextPageWithLayout = () => {
   const router = useRouter()
   const participants = useParticipantsyVaccinationId(parseInt(router.query.vaccinationId as string))
   const vaccination = useVaccionationById(parseInt(router.query.vaccinationId as string))
+  const [contextMenu, setContextMenu] = useState<{ mouseX: number; mouseY: number } | null>(null)
   const acceptParticipant = useAcceptParticipant()
   const rejectParticipant = useRejectParticipant()
   const { enqueueSnackbar } = useSnackbar()
   const queryClient = useQueryClient()
+  const [participantId, setParticipantId] = useState(-1)
+  const [userId, setUserId] = useState(-1)
+  const [notifSenderDialog, setNotifSenderDialog] = useState(false)
 
   const errorSnackbar = (msg: string) => {
     enqueueSnackbar(msg, { variant: 'error', preventDuplicate: true, autoHideDuration: 3000 })
@@ -91,6 +96,36 @@ const VaccinationDetail: NextPageWithLayout = () => {
     }
   }
 
+  const handleContextMenu: (participantId: number, userId: number) => MouseEventHandler<HTMLTableRowElement> =
+    (participantId: number, userId: number) => (event) => {
+      event.preventDefault()
+      setParticipantId(participantId)
+      setUserId(userId)
+      setContextMenu(
+        contextMenu === null
+          ? {
+              mouseX: event.clientX - 2,
+              mouseY: event.clientY - 4
+            }
+          : null
+      )
+    }
+
+  const handleClose = () => {
+    setContextMenu(null)
+    setParticipantId(-1)
+    setUserId(-1)
+  }
+
+  const handleOpenNotificationDialog = () => {
+    setNotifSenderDialog(true)
+  }
+
+  const handleCloseNotificationDialog = () => {
+    setNotifSenderDialog(false)
+    handleClose()
+  }
+
   return (
     <Container component={Stack} disableGutters sx={{ p: { xs: 1, md: 3 } }} spacing={4}>
       <Box>
@@ -120,7 +155,14 @@ const VaccinationDetail: NextPageWithLayout = () => {
             </TableHead>
             <TableBody>
               {participants.data?.map((participant) => (
-                <TableRow key={participant.id}>
+                <TableRow
+                  key={participant.id}
+                  hover
+                  onDoubleClick={handleContextMenu(participant.id, participant.user.id)}
+                  sx={{
+                    userSelect: 'none'
+                  }}
+                >
                   <TableCell>{participant.id}</TableCell>
                   <TableCell>{participant.user.name}</TableCell>
                   <TableCell>{humanDate(participant.createdAt)}</TableCell>
@@ -154,6 +196,16 @@ const VaccinationDetail: NextPageWithLayout = () => {
           </Table>
         </TableContainer>
       </Box>
+      <Menu
+        open={contextMenu !== null}
+        onClose={handleClose}
+        anchorReference="anchorPosition"
+        anchorPosition={contextMenu !== null ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined}
+      >
+        <MenuItem onClick={handleClose}>Kelola</MenuItem>
+        <MenuItem onClick={handleOpenNotificationDialog}>Kirim notifikasi</MenuItem>
+      </Menu>
+      <NotificationSenderDialog open={notifSenderDialog} onClose={handleCloseNotificationDialog} receiverId={userId} />
     </Container>
   )
 }

@@ -1,25 +1,42 @@
-import type {NextPage} from 'next'
-import jwtDecode from 'jwt-decode'
-import { useEffect } from 'react'
-
-
+import Box from '@mui/material/Box'
+import Typography from '@mui/material/Typography'
+import type { NextPage } from 'next'
+import React from 'react'
+import IconButton from '@mui/material/IconButton'
+import Stack from '@mui/material/Stack'
+import HelpCenterRoundedIcon from '@mui/icons-material/HelpCenterRounded'
+import HomeRoundedIcon from '@mui/icons-material/HomeRounded'
+import Link from 'next/link'
 
 const NotFound: NextPage = () => {
-
-    useEffect(() => {
-        try {
-            const data = jwtDecode('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c')
-            console.log(data)
-        }catch(e: any) {
-            console.log(e)
-        }
-    }, [])
-
-    return (
-        <div>
-            hai
-        </div>
-    )
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        width: '100vw',
+        height: '100vh',
+        placeItems: 'center'
+      }}
+    >
+      <Stack spacing={2} >
+        <Typography component="h3" variant="h5">
+          Halaman Tidak Ditemukan
+        </Typography>
+        <Stack direction="row" spacing={2} justifyContent="center">
+          <Link href="/" passHref>
+            <IconButton>
+              <HomeRoundedIcon />
+            </IconButton>
+          </Link>
+          <Link href="/help" passHref>
+            <IconButton>
+              <HelpCenterRoundedIcon />
+            </IconButton>
+          </Link>
+        </Stack>
+      </Stack>
+    </Box>
+  )
 }
 
 export default NotFound

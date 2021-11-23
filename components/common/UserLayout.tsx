@@ -1,4 +1,5 @@
 import useHasRole from '@/hooks/query/has-role'
+import useNotifications from '@/hooks/query/notifications'
 import useUser from '@/hooks/query/user'
 import { truncate } from '@/utils/truncate'
 import RegisterRoundedIcon from '@mui/icons-material/AppRegistrationRounded'
@@ -7,12 +8,11 @@ import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded'
 import HomeRoundedIcon from '@mui/icons-material/HomeOutlined'
 import MenuIcon from '@mui/icons-material/MenuRounded'
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded'
-import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded'
 import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded'
 import AppBar from '@mui/material/AppBar'
 import Badge from '@mui/material/Badge'
 import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
+import ButtonBase from '@mui/material/ButtonBase'
 import Divider from '@mui/material/Divider'
 import Drawer from '@mui/material/Drawer'
 import IconButton from '@mui/material/IconButton'
@@ -25,11 +25,9 @@ import MenuItem from '@mui/material/MenuItem'
 import Stack from '@mui/material/Stack'
 import { useTheme } from '@mui/material/styles'
 import Toolbar from '@mui/material/Toolbar'
-import Link from 'next/link'
-import React, { FC, MouseEvent, useState } from 'react'
-import ButtonBase from '@mui/material/ButtonBase'
 import Image from 'next/image'
-import { ButtonGroup } from '@mui/material'
+import Link from 'next/link'
+import React, { FC, MouseEvent, useMemo, useState } from 'react'
 import ButtonLink from '../ui/ButtonLink'
 
 const drawerWidth = 240
@@ -236,6 +234,11 @@ const ProfileMenu = () => {
 const NotifMenu = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const theme = useTheme()
+  const notifications = useNotifications()
+  const unseenTotal = useMemo(
+    () => notifications.data?.reduce((t, n) => (n.status === 'UNSEEN' ? t + 1 : t), 0),
+    notifications.data
+  )
 
   const handleOpenMenu = (ev: MouseEvent<HTMLElement>) => {
     setAnchorEl(ev.currentTarget)
@@ -248,7 +251,7 @@ const NotifMenu = () => {
   return (
     <Box>
       <IconButton color="inherit" onClick={handleOpenMenu}>
-        <Badge badgeContent={10} variant="standard" color="primary">
+        <Badge badgeContent={unseenTotal} variant="standard" color="primary">
           <NotificationsNoneRoundedIcon />
         </Badge>
       </IconButton>
@@ -270,8 +273,11 @@ const NotifMenu = () => {
           }
         }}
       >
-        <MenuItem onClick={handleCloseMenu}>Pendaftaran vaksin anda disetujui</MenuItem>
-        <MenuItem onClick={handleCloseMenu}>Pendaftaran vaksin anda disetujui</MenuItem>
+        {notifications.data?.map((notif) => (
+          <MenuItem key={notif.id} onClick={handleCloseMenu}>
+            {notif.title}
+          </MenuItem>
+        ))}
       </Menu>
     </Box>
   )

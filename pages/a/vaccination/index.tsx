@@ -122,7 +122,7 @@ const Vaccinations: NextPageWithLayout = () => {
         anchorPosition={contextMenu !== null ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : undefined}
       >
         <Link passHref href={`/a/vaccination/${id}`}>
-          <MenuItem onClick={handleClose}>Detail</MenuItem>
+          <MenuItem onClick={handleClose}>Kelola</MenuItem>
         </Link>
         <MenuItem onClick={handleClose}>Sunting</MenuItem>
         <MenuItem onClick={handleDelete}>Hapus</MenuItem>
